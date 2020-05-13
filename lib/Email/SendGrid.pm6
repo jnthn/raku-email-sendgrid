@@ -52,7 +52,7 @@ class Email::SendGrid {
     #| C<Promise> returned.
     method send-mail(AddressOrListOfAddress :$to!, AddressOrListOfAddress :$cc,
             AddressOrListOfAddress :$bcc, Address :$from = $!from // die("Must specify a from address"),
-            Address :$reply-to, Str :$subject!, :%content!, :$async) {
+            Address :$reply-to, Str :$subject!, :%content!, :$async, :$sandbox) {
         # Form the JSON payload describing the email.
         my %personalization = to => to-email-list($to);
         %personalization<cc> = to-email-list($_) with $cc;
@@ -63,6 +63,9 @@ class Email::SendGrid {
                 :$subject,
                 :content(form-content(%content));
         %request-json<reply-to> = .for-json with $reply-to;
+        if $sandbox {
+            %request-json<mail_settings><sandbox_mode><enable> = True;
+        }
 
         # Make the HTTP request.
         my $req = $!client.post: API_BASE.add('mail/send'),
